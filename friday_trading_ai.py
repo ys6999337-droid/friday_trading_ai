@@ -807,12 +807,13 @@ def main():
     period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=0)
     interval = st.sidebar.selectbox("Interval", ["1d", "1h", "15m", "5m", "1m"], index=0)
 
-    # Advanced options expander
+        # Advanced options expander
     with st.sidebar.expander("Advanced Options"):
-        use_ai_model = st.checkbox("Use AI Model (PyTorch)", value=False)
-        enable_voice = st.checkbox("Enable Voice Assistant", value=False) and VOICE_AVAILABLE
-        telegram_token = st.text_input("Telegram Bot Token", type="password")
-        telegram_chat = st.text_input("Telegram Chat ID")
+        use_ai_model = st.checkbox("Use AI Model (PyTorch)")
+        enable_voice = st.checkbox("Enable Voice Assistant")
+        telegram_token = st.sidebar.text_input("Telegram Bot Token")
+        telegram_chat = st.sidebar.text_input("Telegram Chat ID")
+
     # --- AUTO-PILOT SETTINGS ---
     st.sidebar.markdown("---")
     st.sidebar.header("🔄 Auto-Pilot")
