@@ -842,13 +842,19 @@ def main():
 
     with col1:
         st.subheader(f"📈 {symbol} – Price Chart")
-        # Fetch data with caching
+               # Naya Data Fetcher jo Yahoo Block ko bypass karega
         @st.cache_data(ttl=600)
         def fetch_data(sym, period, interval):
-            return friday.data_mgr.get_stock_data(sym, period=period, interval=interval)
+            try:
+                # Humara naya function call karein
+                return fetch_stock_data(sym) 
+            except Exception as e:
+                st.error(f"Data Error: {e}")
+                return pd.DataFrame()
+ 
 
-        df = fetch_data(symbol, period, interval)
-        if df.empty:
+          df = fetch_data(symbol, period, interval)
+          if df.empty:
             st.warning("No data found for symbol. Check symbol or try different period.")
             return
 
