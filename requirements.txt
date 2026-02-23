@@ -6,3 +6,4 @@ torch
 plotly
 ta-lib
 requests
+yahooquery
