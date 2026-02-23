@@ -24,6 +24,22 @@ import talib
 import asyncio
 import warnings
 warnings.filterwarnings('ignore')
+@st.cache_data(ttl=600)
+def fetch_stock_data(ticker_symbol):
+    try:
+        # Pehle YahooQuery se koshish karein
+        t = Ticker(ticker_symbol)
+        data = t.history(period='1d', interval='1m')
+        if not data.empty:
+            # Agar data MultiIndex hai toh use clean karein
+            if isinstance(data.index, pd.MultiIndex):
+                data = data.xs(ticker_symbol)
+            return data
+    except Exception:
+        pass
+    
+    # Agar YahooQuery fail ho toh yfinance fallback use karein
+    return yf.download(ticker_symbol, period='1d', interval='1m')
 
 # Optional imports – will be checked at runtime
 try:
@@ -238,33 +254,16 @@ class CustomizableRiskManager:
 
 # =============================================================================
 # 4. DATA SOURCE MANAGER – DataSourceManager
-# =============================================================================
+# ============================================================================
 class DataSourceManager:
-    def __init__(self, stocks_sources=['yfinance'], crypto_exchanges=['binance'] if CCXT_AVAILABLE else [],
+    def __init__(self, stocks_sources=['yfinance'], crypto_exchanges=[],
                  forex_sources=[], preferred_exchange='binance', api_keys={}):
         self.stocks_sources = stocks_sources
-        self.crypto_exchanges = crypto_exchanges
-        self.forex_sources = forex_sources
-        self.preferred_exchange = preferred_exchange
-        self.api_keys = api_keys
         self.yf = yf
-        if CCXT_AVAILABLE and crypto_exchanges:
-            self.ccxt_exchanges = {}
-            for ex in crypto_exchanges:
-                try:
-                    exchange_class = getattr(ccxt, ex)
-                    self.ccxt_exchanges[ex] = exchange_class({
-                        'apiKey': api_keys.get(f'{ex}_key',''),
-                        'secret': api_keys.get(f'{ex}_secret',''),
-                        'enableRateLimit': True
-                    })
-                except: pass
 
     def get_stock_data(self, symbol, period='1mo', interval='1d'):
-        if 'yfinance' in self.stocks_sources:
-            ticker = self.yf.Ticker(symbol)
-            return ticker.history(period=period, interval=interval)
-        return pd.DataFrame()
+        # Ye line aapke naye fetch_stock_data function ko call karegi
+        return fetch_stock_data(symbol)
 
     def get_crypto_price(self, symbol, exchange=None):
         if not exchange:
