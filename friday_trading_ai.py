@@ -813,6 +813,14 @@ def main():
         enable_voice = st.checkbox("Enable Voice Assistant", value=False) and VOICE_AVAILABLE
         telegram_token = st.text_input("Telegram Bot Token", type="password")
         telegram_chat = st.text_input("Telegram Chat ID")
+    # --- AUTO-PILOT SETTINGS ---
+    st.sidebar.markdown("---")
+    st.sidebar.header("🔄 Auto-Pilot")
+    auto_refresh = st.sidebar.checkbox("Enable Auto-Refresh", value=True)
+    refresh_secs = st.sidebar.slider("Refresh Interval (Secs)", 30, 300, 60)
+    
+    if 'trade_logs' not in st.session_state:
+        st.session_state.trade_logs = []
 
     # Initialize FRIDAY instance (cached to avoid re-init on each rerun)
     @st.cache_resource
@@ -889,6 +897,16 @@ def main():
                     signal = BTSTStrategies.gap_prediction(df)
                 else:
                     signal = {'buy':False,'sell':False}
+        # Signal record karne aur beep bajane ke liye
+        current_time = datetime.datetime.now().strftime("%H:%M:%S")
+        action = "BUY" if signal.get('buy') else "SELL"
+        
+        # Beep Sound trigger
+        st.markdown('<audio autoplay><source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg"></audio>', unsafe_allow_html=True)
+        
+        # Log entry (Sirf tab jab naya signal ho)
+        if not st.session_state.trade_logs or st.session_state.trade_logs[0]['Time'] != current_time:
+            st.session_state.trade_logs.insert(0, {"Time": current_time, "Symbol": symbol, "Action": action, "Price": df['Close'].iloc[-1]})
 
                 # If AI model enabled and signal is weak, use AI
                 if use_ai_model and (not signal.get('buy') and not signal.get('sell')):
@@ -975,3 +993,13 @@ def main():
 # =============================================================================
 if __name__ == "__main__":
     main()
+    # Sidebar mein logs dikhayein
+    st.sidebar.subheader("📜 Live Logs")
+    if st.session_state.trade_logs:
+        st.sidebar.table(pd.DataFrame(st.session_state.trade_logs).head(5))
+
+    # Auto-Refresh execution
+    if auto_refresh:
+        import time
+        time.sleep(refresh_secs)
+        st.rerun()
