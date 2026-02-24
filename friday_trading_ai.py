@@ -27,7 +27,6 @@ warnings.filterwarnings('ignore')
 # Initialize session state for logs
 if 'trade_logs' not in st.session_state:
     st.session_state.trade_logs = []
-
 @st.cache_data(ttl=600)
 def fetch_stock_data(ticker_symbol):
     try:
