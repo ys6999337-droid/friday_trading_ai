@@ -853,10 +853,10 @@ def main():
                 return pd.DataFrame()
  
 
-         df = fetch_data(symbol, period, interval)
-         if df.empty:
-         st.warning("No data found for symbol. Check symbol or try different period.")
-         return
+        df = fetch_data(symbol, period, interval)
+        if df.empty:
+        st.warning("No data found for symbol. Check symbol or try different period.")
+        return
 
          # Calculate technical indicators based on config
          tech_params = friday.config.get('technical', {})
