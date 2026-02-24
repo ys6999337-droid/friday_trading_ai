@@ -43,6 +43,11 @@ def fetch_stock_data(ticker_symbol, period='1d', interval='1m'):
     
     # Agar YahooQuery fail ho toh yfinance fallback use karein
     return yf.download(ticker_symbol, period=period, interval=interval)
+        # Data validation check
+        if data is None or (isinstance(data, pd.DataFrame) and data.empty):
+             st.error("⚠️ Data nahi mil raha. Sidebar se Interval (e.g. 1h) badlein.")
+             st.stop() # App ko yahan rok do taaki crash na ho
+        return data
 
 # Optional imports – will be checked at runtime
 try:
