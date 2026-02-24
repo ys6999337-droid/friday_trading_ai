@@ -37,7 +37,6 @@ def fetch_stock_data(ticker_symbol, period='1d', interval='1m'):
             # Agar data MultiIndex hai toh use clean karein
             if isinstance(data.index, pd.MultiIndex):
                 data = data.xs(ticker_symbol)
-            return data
     except Exception:
         pass
     
@@ -45,7 +44,7 @@ def fetch_stock_data(ticker_symbol, period='1d', interval='1m'):
         data = yf.download(ticker_symbol, period=period, interval=interval)
         
         # Data validation check
-        if data is None or (isinstance(data, pd.DataFrame) and data.empty):
+        if data is None or (isinstance(data, pd.DataFrame) and len(data) < 10):
             st.error("⚠️ Data nahi mil raha. Sidebar se Interval badlein.")
             st.stop()
             
