@@ -867,7 +867,8 @@ def main():
             return
 
         tech_params = friday.config.get('technical_analysis', {})
-        df = CustomizableTechnicalAnalysis.calculate_all(df, tech_params)
+        df = CustomizableTechnicalAnalysis().calculate_all(df, tech_params)
+
 
         fig = go.Figure(data=[go.Candlestick(
             x=df.index,
