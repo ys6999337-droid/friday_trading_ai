@@ -32,7 +32,7 @@ def fetch_stock_data(ticker_symbol, period='1d', interval='1m'):
     try:
         # Pehle YahooQuery se koshish karein
         t = Ticker(ticker_symbol)
-        data = t.history(period='1d', interval='1m')
+        data = t.history(period=period, interval=interval)
         if not data.empty:
             # Agar data MultiIndex hai toh use clean karein
             if isinstance(data.index, pd.MultiIndex):
@@ -42,7 +42,7 @@ def fetch_stock_data(ticker_symbol, period='1d', interval='1m'):
         pass
     
     # Agar YahooQuery fail ho toh yfinance fallback use karein
-    return yf.download(ticker_symbol, period='1d', interval='1m')
+    return yf.download(ticker_symbol, period=period, interval=interval)
 
 # Optional imports – will be checked at runtime
 try:
