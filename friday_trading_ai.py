@@ -24,7 +24,6 @@ import talib
 import asyncio
 import warnings
 warnings.filterwarnings('ignore')
-st.write("App is Running!")
 # Initialize session state for logs
 if 'trade_logs' not in st.session_state:
     st.session_state.trade_logs = []
@@ -930,8 +929,10 @@ def main():
         st.metric("Capital", f"₹{metrics['capital']:,}")
         st.metric("Drawdown", f"{metrics['drawdown']*100:.2f}%")
 
-# --- ENTRY POINT ---
+# --- EXECUTION ---
 if __name__ == "__main__":
+    main()  # <--- Ye line dashboard ko start karegi
+    
     # Sidebar logs
     st.sidebar.subheader("📜 Live Logs")
     if st.session_state.trade_logs:
