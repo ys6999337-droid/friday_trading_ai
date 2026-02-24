@@ -884,14 +884,13 @@ def main():
             st.dataframe(df.tail(10))
 
     
-
     with col2:
         st.subheader("📊 Analysis & Signals")
-
-        # Run strategy
+        
+        # Run strategy button
         if st.button("Generate Signal", type="primary"):
             with st.spinner("Analyzing..."):
-                # Use strategy library based on trading style
+                # Strategy selection
                 if trading_style == 'scalping':
                     signal = ScalpingStrategies.momentum_scalp(df)
                 elif trading_style == 'swing':
@@ -901,110 +900,35 @@ def main():
                 elif trading_style == 'btst':
                     signal = BTSTStrategies.gap_prediction(df)
                 else:
-                    signal = {'buy':False,'sell':False}
-        # Signal record karne aur beep bajane ke liye
-        current_time = datetime.datetime.now().strftime("%H:%M:%S")
-        action = "BUY" if signal.get('buy') else "SELL"
-        
-        # Beep Sound trigger
-        st.markdown('<audio autoplay><source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg"></audio>', unsafe_allow_html=True)
-        
-        # Log entry (Sirf tab jab naya signal ho)
-        if not st.session_state.trade_logs or st.session_state.trade_logs[0]['Time'] != current_time:
-            st.session_state.trade_logs.insert(0, {"Time": current_time, "Symbol": symbol, "Action": action, "Price": df['Close'].iloc[-1]})
+                    signal = {'buy': False, 'sell': False}
 
-                # If AI model enabled and signal is weak, use AI
-                if use_ai_model and (not signal.get('buy') and not signal.get('sell')):
-                    ai_signal = friday.predict_signal(df)
-                    if ai_signal.get('buy') or ai_signal.get('sell'):
-                        signal = ai_signal
-                        st.info("AI model used for prediction")
+                # Signal metadata
+                current_time = datetime.datetime.now().strftime("%H:%M:%S")
+                action = "BUY" if signal.get('buy') else "SELL"
 
-                # Display signal
+                # Sound alert
+                st.markdown('<audio autoplay><source src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>', unsafe_allow_html=True)
+
+                # Log entry update
+                if not st.session_state.trade_logs or st.session_state.trade_logs[0]['Time'] != current_time:
+                    st.session_state.trade_logs.insert(0, {"Time": current_time, "Action": action, "Symbol": symbol})
+
+                # Result display
                 if signal.get('buy'):
-                    st.success(f"🚀 **BUY SIGNAL** (strength: {signal.get('strength',1):.2f})")
+                    st.success(f"🚀 **BUY SIGNAL**")
                 elif signal.get('sell'):
-                    st.error(f"🔻 **SELL SIGNAL** (strength: {signal.get('strength',1):.2f})")
+                    st.error(f"🔻 **SELL SIGNAL**")
                 else:
-                    st.info("No clear signal – HOLD")
+                    st.info("No clear signal - HOLD")
 
-                # Show risk metrics
-                metrics = friday.risk.get_risk_metrics()
-                st.metric("Capital", f"₹{metrics['capital']:,.0f}")
-                st.metric("Drawdown", f"{metrics['drawdown']*100:.2f}%")
-                st.metric("Leverage", f"{metrics['leverage']:.2f}x")
+        # Risk metrics
+        metrics = friday.risk.get_risk_metrics()
+        st.metric("Capital", f"₹{metrics['capital']:,}")
+        st.metric("Drawdown", f"{metrics['drawdown']*100:.2f}%")
 
-                # Option to execute trade (simulated)
-                if signal.get('buy') or signal.get('sell'):
-                    price = df['Close'].iloc[-1]
-                    qty = int(friday.risk.capital * friday.risk.max_position_pct / price)
-                    if qty > 0:
-                        if st.button(f"Execute {signal.get('buy') and 'BUY' or 'SELL'} {qty} shares"):
-                            action = 'BUY' if signal.get('buy') else 'SELL'
-                            trade = friday.execute_trade(symbol, action, qty, price)
-                            st.success(f"Trade executed: {action} {qty} @ ₹{price:.2f}")
-                            st.balloons()
-                            # Trigger alert
-                            friday.alerts.speak(f"{action} {symbol} at {price}")
-                    else:
-                        st.warning("Quantity too low to trade")
-
-        # Portfolio summary
-        st.subheader("📁 Portfolio")
-        holdings = friday.portfolio.holdings
-        if holdings:
-            portfolio_df = pd.DataFrame([
-                {"Symbol": sym, "Quantity": h['quantity'], "Avg Price": h['avg_price'], "Current Value": h['quantity']*df['Close'].iloc[-1] if not df.empty else 0}
-                for sym, h in holdings.items()
-            ])
-            st.dataframe(portfolio_df, use_container_width=True)
-        else:
-            st.write("No holdings yet.")
-
-        # BTST Opportunities (if style is btst)
-        if trading_style == 'btst' and st.button("Scan BTST Opportunities"):
-            watchlist = [symbol, "TATAMOTORS.NS", "HDFCBANK.NS"]  # Example
-            opps = friday.btst_executor.scan_opportunities(watchlist)
-            if opps:
-                st.write("Top opportunities:")
-                for opp in opps[:3]:
-                    st.write(f"{opp['symbol']} – {opp['action']} (strength {opp['strength']:.2f})")
-            else:
-                st.write("No BTST opportunities found.")
-
-        # Voice assistant (if enabled)
-        if enable_voice and VOICE_AVAILABLE:
-            st.subheader("🎤 Voice Command")
-            if st.button("Listen"):
-                text = friday.voice.listen()
-                if text:
-                    st.write(f"You said: {text}")
-                    cmd = friday.voice.process_command(text)
-                    if cmd['intent'] == 'price':
-                        st.info(f"Fetching price for {cmd['symbol']}")
-                        # Could update symbol here
-                    else:
-                        st.warning("Command not recognized")
-                else:
-                    st.error("Could not understand audio")
-
-        # Alerts
-        if st.button("Test Alert"):
-            friday.alerts.speak("This is a test alert")
-            st.success("Alert triggered (voice/telegram)")
-
-# =============================================================================
-# 16. ENTRY POINT
-# =============================================================================
+# --- ENTRY POINT ---
 if __name__ == "__main__":
-    main()
-    # Sidebar mein logs dikhayein
+    # Sidebar logs
     st.sidebar.subheader("📜 Live Logs")
     if st.session_state.trade_logs:
         st.sidebar.table(pd.DataFrame(st.session_state.trade_logs).head(5))
-
-    # Auto-Refresh execution
-    if auto_refresh:
-        import time
-        time.sleep(refresh_secs)
-        st.rerun()
