@@ -24,6 +24,7 @@ import talib
 import asyncio
 import warnings
 warnings.filterwarnings('ignore')
+st.write("App is Running!")
 # Initialize session state for logs
 if 'trade_logs' not in st.session_state:
     st.session_state.trade_logs = []
