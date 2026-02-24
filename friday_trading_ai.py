@@ -839,46 +839,47 @@ def main():
 
     # Main area: data fetching and analysis
     col1, col2 = st.columns([2, 1])
-
     with col1:
-        st.subheader(f"📈 {symbol} – Price Chart")
-               # Naya Data Fetcher jo Yahoo Block ko bypass karega
+        st.subheader(f"📈 {symbol} - Analysis")
+        # Naya Data Fetcher jo cache use karta hai
         @st.cache_data(ttl=600)
         def fetch_data(sym, period, interval):
             try:
-                # Humara naya function call karein
-                return fetch_stock_data(sym) 
+                # Humara naya function use karein
+                return fetch_stock_data(sym, period, interval)
             except Exception as e:
-                st.error(f"Data Error: {e}")
+                st.error(f"Data Error: {str(e)}")
                 return pd.DataFrame()
- 
 
-          df = fetch_data(symbol, period, interval)
-          if df.empty:
-          st.warning("No data found for symbol. Check symbol or try different period.")
-          return
+        # --- Yahan se correction start hai (Indented code) ---
+        df = fetch_data(symbol, period, interval)
+        if df.empty:
+            st.warning(f"No data found for symbol {symbol}")
+            return
 
-          # Calculate technical indicators based on config
-          tech_params = friday.config.get('technical', {})
-          df = CustomizableTechnicalAnalysis.calculate(df, **tech_params)
+        # Calculate technical indicators based on config
+        tech_params = friday.config.get('technical_analysis', {})
+        df = CustomizableTechnicalAnalysis.calculate_all(df, tech_params)
 
-          # Plotly chart
-          fig = go.Figure(data=[go.Candlestick(x=df.index,
-                                             open=df['Open'],
-                                             high=df['High'],
-                                             low=df['Low'],
-                                             close=df['Close'],
-                                             name='OHLC')])
+        # Plotly chart
+        fig = go.Figure(data=[go.Candlestick(
+            x=df.index,
+            open=df['Open'],
+            high=df['High'],
+            low=df['Low'],
+            close=df['Close'],
+            name='Market Data'
+        )])
 
         # Add moving averages
         for col in df.columns:
             if col.startswith('SMA_') or col.startswith('EMA_'):
-                fig.add_trace(go.Scatter(x=df.index, y=df[col], mode='lines', name=col))
+                fig.add_trace(go.Scatter(x=df.index, y=df[col], name=col))
 
         # Add Bollinger Bands
         if 'BB_UPPER' in df.columns:
-            fig.add_trace(go.Scatter(x=df.index, y=df['BB_UPPER'], line=dict(width=1, dash='dash'), name='BB Upper'))
-            fig.add_trace(go.Scatter(x=df.index, y=df['BB_LOWER'], line=dict(width=1, dash='dash'), name='BB Lower', fill='tonexty'))
+            fig.add_trace(go.Scatter(x=df.index, y=df['BB_UPPER'], name='BB Upper', line=dict(dash='dash')))
+            fig.add_trace(go.Scatter(x=df.index, y=df['BB_LOWER'], name='BB Lower', line=dict(dash='dash')))
 
         fig.update_layout(xaxis_rangeslider_visible=False, height=600)
         st.plotly_chart(fig, use_container_width=True)
@@ -886,6 +887,8 @@ def main():
         # Show latest data
         with st.expander("Latest Data"):
             st.dataframe(df.tail(10))
+
+    
 
     with col2:
         st.subheader("📊 Analysis & Signals")
